@@ -5,16 +5,17 @@ class Block:
     """
     テトリミノブロックを定義するクラスです。
     """
-    SIZE = 4  # ブロックのサイズ
-    SCALE = 32  # ブロックの描画サイズ
-    TYPE_MAX = 7  # ブロックの種類
-    ROT_MAX = 4  # 最高回転数
+
+    SIZE = 4        # ブロックのサイズ
+    SCALE = 32      # ブロックの描画サイズ
+    TYPE_MAX = 7    # ブロックの種類
+    ROT_MAX = 4     # 最高回転回数
 
     def __init__(self):
         """
-         テトリミノブロックのポジションを初期化し
-       テトリスで使用する全てのブロックを生成させます。
-       """
+        テトリミノブロックのポジションを初期化し
+        テトリスで使用する全てのブロックを生成させます。
+        """
         self.x = int(stage.Stage.WIDTH / 2 - Block.SIZE / 2)
         self.y = -1
         self.blocks = [
@@ -237,14 +238,15 @@ class Block:
             ],
         ]
 
-    def get_cell_data(self, type, rot, x, y, ):
+    def get_cell_data(self, type, rot, x, y):
         """
-        指定されたブロックの人マスのデータを取得します
+        指定されたブロックの一マスのデータを取得します
         type: ブロックの種類
-        rot:  ブロックの回転数
-        x:    ブロックセルのｘ軸
-        y:    ブロックセルのｙ軸
+        rot: ブロックの回転回数
+        x: ブロックセルのX軸
+        y: ブロックセルのY軸
         """
+
         return self.blocks[type][rot][y][x]
 
     def reset(self):

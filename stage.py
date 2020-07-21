@@ -1,11 +1,14 @@
-import block
 import random
+import block
+import pygame
+# 理由がわからない
+import sys
 
 
 class Stage:
     """
-   テトリスの盤面を管理するクラスです。
-   """
+    テトリスの盤面を管理するクラスです。
+    """
     WIDTH = 10  # 盤面の幅
     HEIGHT = 20  # 盤面の高さ
     NONE = 0  # 空マス
@@ -14,8 +17,8 @@ class Stage:
 
     def __init__(self):
         """
-       盤面を生成させます。
-       """
+        盤面を生成させます。
+        """
 
         self.data = [[Stage.NONE for i in range(Stage.WIDTH)] for j in range(Stage.HEIGHT)]
         self.block = block.Block()
@@ -28,15 +31,16 @@ class Stage:
 
     def update(self):
         """
-       ステージの更新処理を行うメソッドです。
-       """
+        ステージの更新処理を行うメソッドです。
+        """
         self.__marge_block()
+
         # もし下方向に衝突しない場合
         if not self.is_collision_bottom():
             self.is_fix = False
             if self.can_drop:
                 self.__drop_block()
-        # もし衝突する場合
+        # もし下方向に衝突する場合
         else:
             self.is_fix = True
             self.__fix_block()
@@ -44,27 +48,22 @@ class Stage:
             self.__remove_lines()
             self.block.reset()
             self.__select_block()
-        self.__marge_block()
 
     def input(self, key):
         """
         キー入力を受け付けるメソッドです。
         各キーの入力に対しての処理を記述してください。
         """
-        if key == 'space':  # スペース
+        if key == 'space':  # スペースキー
             self.can_drop = not self.can_drop
-        # Wキー
-        if key == 'w':
+        if key == 'w':  # Wキー
             self.__rotation_block()
-
-        if key == 'a':
+        if key == 'a':  # Aキー
             if not self.is_collision_left():
                 self.block.x -= 1
-
-        if key == 's':
+        if key == 's':  # Sキー
             self.hard_drop()
-        # Dキー
-        if key == 'd':
+        if key == 'd':  # Dキー
             if not self.is_collision_right():
                 self.block.x += 1
 
@@ -79,27 +78,33 @@ class Stage:
 
     def __rotation_block(self):
         """
-        ブロックを回転させるメソッドです
+        ブロックを回転させるメソッドです。
         """
+        """
+        self.rot += 1
+        if self.rot == block.Block.ROT_MAX:
+            self.rot = 0
+        """
+
         if self.__can_rotation_block():
-            self.rot += 1
-            if self.rot == block.Block.ROT_MAX:
-                self.rot = 0
+            self.rot = (self.rot + 1) % block.Block.ROT_MAX
 
     def __can_rotation_block(self):
         """
-        現在のブロックが回転可能か判定するメソッドです。
-        回転することができるのであればTrueを返却し、
+        現在のブロックが回転可能かを判定するメソッドです。
+        回転することが出来るのであればTrueを返却し、
         そうでなければ、Falseを返却します。
         """
+
         # 次の角度
         n_rot = (self.rot + 1) % block.Block.ROT_MAX
         # ブロックの座標
         b_x = self.block.x
         b_y = self.block.y
+
         for i in range(block.Block.SIZE):
             for j in range(block.Block.SIZE):
-                #  次の角度のブロック情報を取得する
+                # 次の角度のブロック情報を取得する
                 if self.block.get_cell_data(self.type, n_rot, j, i) == Stage.BLOCK:
                     # 範囲外チェック
                     if self.is_out_of_stage(b_x + j, b_y + i):
@@ -112,15 +117,15 @@ class Stage:
 
     def __drop_block(self):
         """
-        ブロックを１段下げるメソッドです。
+        ブロックを1段下げるメソッドです。
         """
 
         self.block.y += 1
 
     def __marge_block(self):
         """
-       ステージのデータにブロックのデータをマージするメソッドです。
-       """
+        ステージのデータにブロックのデータをマージするメソッドです。
+        """
         b_t = self.type
         b_r = self.rot
         b_x = self.block.x
@@ -141,8 +146,8 @@ class Stage:
 
     def __fix_block(self):
         """
-       ブロックを固定するメソッドです。
-       """
+        ブロックを固定するメソッドです。
+        """
         b_t = self.type
         b_r = self.rot
         b_x = self.block.x
@@ -155,43 +160,14 @@ class Stage:
 
     def is_out_of_stage(self, x, y):
         """
-       指定されたステージの座標が範囲外かを調べるメソッドです。
-       x: ステージセルのX軸
-       y: ステージセルのY軸
-       """
+        指定されたステージの座標が範囲外かを調べるメソッドです。
+        x: ステージセルのX軸
+        y: ステージセルのY軸
+        """
 
         return x < 0 or x >= Stage.WIDTH or y < 0 or y >= Stage.HEIGHT
 
     def is_collision_bottom(self, x=-1, y=-1):
-        """
-       下方向の衝突判定を行うメソッドです。
-       衝突していればTrueが返却され、そうでなければFalseが返却されます。
-       x: 対象のブロックのX軸座標
-       y: 対象のブロックのY軸座標
-       """
-        b_t = self.type
-        b_r = self.rot
-
-        if x == -1 and y == -1:
-            x = self.block.x
-            y = self.block.y
-
-        for i in range(block.Block.SIZE):
-            for j in range(block.Block.SIZE):
-                # 取得したブロックの１マスのデータがBLOCK(1)だった場合
-                if self.block.get_cell_data(b_t, b_r, j, i) == Stage.BLOCK:
-                    # 対象のブロックマスの位置から１つ下げたマスが
-                    # 　ステージの範囲外だった場合
-                    if self.is_out_of_stage(x + j, y + i + 1):
-                        return True
-                    # 　対象のブロックマスの位置から１つ下げたマスが
-                    #   固定されたブロックのマス（２）だった場合
-                    if self.data[y + i + 1][x + j] == Stage.FIX:
-                        return True
-                    # 　どの条件にも当てはまらない場合は常にどこにも衝突していない
-        return False
-
-    def is_collision_left(self, x=-1, y=-1):
         """
         下方向の衝突判定を行うメソッドです。
         衝突していればTrueが返却され、そうでなければFalseが返却されます。
@@ -207,26 +183,27 @@ class Stage:
 
         for i in range(block.Block.SIZE):
             for j in range(block.Block.SIZE):
-                # 取得したブロックの１マスのデータがBLOCK(1)だった場合
+                # 取得したブロックの一マスのデータがBLOCK(1)だった場合
                 if self.block.get_cell_data(b_t, b_r, j, i) == Stage.BLOCK:
-                    # 対象のブロックマスの位置から１つ左のマスが
-                    # 　ステージの範囲外だった場合
-                    if self.is_out_of_stage(x + j - 1, y + i + 1):
+                    # 対象のブロックマスの位置から一つ下げたマスが
+                    # ステージの範囲外だった場合
+                    if self.is_out_of_stage(x + j, y + i + 1):
                         return True
-                    # 　対象のブロックマスの位置から１つ左マスが
-                    #   固定されたブロックのマス（２）だった場合
-                    if self.data[y + i + 1][x + j - 1] == Stage.FIX:
+                    # 対象のブロックマスの位置から一つ下げたマスが
+                    # 固定されたブロックのマス(2)だった場合
+                    if self.data[y + i + 1][x + j] == Stage.FIX:
                         return True
-                    # 　どの条件にも当てはまらない場合は常にどこにも衝突していない
+
+        # どの条件にも当てはまらない場合は常にどこにも衝突していない
         return False
 
-    def is_collision_right(self, x=-1, y=-1):
+    def is_collision_left(self, x=-1, y=-1):
         """
-       下方向の衝突判定を行うメソッドです。
-       衝突していればTrueが返却され、そうでなければFalseが返却されます。
-       x: 対象のブロックのX軸座標
-       y: 対象のブロックのY軸座標
-       """
+        左方向の衝突判定を行うメソッドです。
+        衝突していればTrueが返却され、そうでなければFalseが返却されます。
+        x: 対象のブロックのX軸座標
+        y: 対象のブロックのY軸座標
+        """
         b_t = self.type
         b_r = self.rot
 
@@ -236,28 +213,62 @@ class Stage:
 
         for i in range(block.Block.SIZE):
             for j in range(block.Block.SIZE):
-                # 取得したブロックの１マスのデータがBLOCK(1)だった場合
+                # 取得したブロックの一マスのデータがBLOCK(1)だった場合
                 if self.block.get_cell_data(b_t, b_r, j, i) == Stage.BLOCK:
-                    # 対象のブロックマスの位置から１つ右マスが
-                    # 　ステージの範囲外だった場合
-                    if self.is_out_of_stage(x + j + 1, y + i + 1):
+                    # 対象のブロックマスの位置から一つ左のマスが
+                    # ステージの範囲外だった場合
+                    if self.is_out_of_stage(x + j - 1, y + i):
                         return True
-                    # 　対象のブロックマスの位置から１つ右マスが
-                    #   固定されたブロックのマス（２）だった場合
-                    if self.data[y + i + 1][x + j + 1] == Stage.FIX:
+                    # 対象のブロックマスの位置から一つ左のマスが
+                    # 固定されたブロックのマス(2)だった場合
+                    if self.data[y + i][x + j - 1] == Stage.FIX:
                         return True
-                    # 　どの条件にも当てはまらない場合は常にどこにも衝突していない
+
+        # どの条件にも当てはまらない場合は常にどこにも衝突していない
         return False
 
-    def hard_drop(self, x=-1, y=-1):
+    def is_collision_right(self, x=-1, y=-1):
+        """
+        右方向の衝突判定を行うメソッドです。
+        衝突していればTrueが返却され、そうでなければFalseが返却されます。
+        x: 対象のブロックのX軸座標
+        y: 対象のブロックのY軸座標
+        """
+        b_t = self.type
+        b_r = self.rot
+
+        if x == -1 and y == -1:
+            x = self.block.x
+            y = self.block.y
+
+        for i in range(block.Block.SIZE):
+            for j in range(block.Block.SIZE):
+                # 取得したブロックの一マスのデータがBLOCK(1)だった場合
+                if self.block.get_cell_data(b_t, b_r, j, i) == Stage.BLOCK:
+                    # 対象のブロックマスの位置から一つ右のマスが
+                    # ステージの範囲外だった場合
+                    if self.is_out_of_stage(x + j + 1, y + i):
+                        return True
+                    # 対象のブロックマスの位置から一つ右のマスが
+                    # 固定されたブロックのマス(2)だった場合
+                    if self.data[y + i][x + j + 1] == Stage.FIX:
+                        return True
+
+        # どの条件にも当てはまらない場合は常にどこにも衝突していない
+        return False
+
+    def hard_drop(self):
+        """
+        ハードドロップ処理です。
+        """
+        # 下に衝突判定がない限りブロックを下げ続ける
         while not self.is_collision_bottom():
             self.__drop_block()
 
     def __check_remove_lines(self):
         """
-        消える例をチェックするメソッドです
+        消える列をチェックするメソッドです。
         """
-
         for i in range(Stage.HEIGHT):
             flg = True
             for j in range(Stage.WIDTH):
@@ -267,28 +278,32 @@ class Stage:
             self.remove_line[i] = flg
 
     def __remove_lines(self):
+        """
+        列を消すメソッドです。
+        """
+
         # 置き換え先の列を参照するポインタ
         idx = Stage.HEIGHT - 1
 
-        # そろっている列の削除（NONEにする）
+        # 揃っている列の削除(NONEにする)
         for i in range(Stage.HEIGHT):
             if self.remove_line[i]:
                 for j in range(Stage.WIDTH):
                     self.data[i][j] = Stage.NONE
 
-        # そろっていない列をしたの列から積み上げなおす
+        # 揃っていない列を下の列から積み上げなおす
         for i in reversed(range(Stage.HEIGHT)):
-            # 　もし、対象の列がそろっていなかった場合
+            # もし、対象の列が揃っていなかった場合
             if not self.remove_line[i]:
                 for j in range(Stage.WIDTH):
-                    # 置き換え先の列にそろっていない列を代入する
+                    # 置き換え先の列に揃っていない列を代入する
                     self.data[idx][j] = self.data[i][j]
-                # 置き換え先の列を参照するポインタを１列上げる
+                # 置き換え先の列を参照するポインタを一列上げる
                 idx -= 1
 
     def shadow_position(self):
         """
-        テトリミノの影を作るｙ座標を計算してそのｙ座標を返却します。
+        テトリミノの影を作るy軸座標を計算してそのy軸座標を返却します。
         """
         # 現在のブロックの座標を退避
         tx = self.block.x
@@ -305,10 +320,12 @@ class Stage:
         ゲームオーバーであればTrueを返却し、
         そうでなければFalseを返却します。
         """
-        x = self.block.x
-        y = self.block.y
+
+        # ブロックの情報を取得
         t = self.type
         r = self.rot
+        x = self.block.x
+        y = self.block.y
 
         for i in range(block.Block.SIZE):
             for j in range(block.Block.SIZE):
@@ -321,3 +338,5 @@ class Stage:
                             return True
 
         return False
+
+
